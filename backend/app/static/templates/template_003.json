@@ -1,0 +1,53 @@
+{
+  "id": "template_003",
+  "name": "Template 003",
+  "file": "template_003.html",
+  "groups": [
+    {
+      "label": "body_sections",
+      "count": 6,
+      "placeholders": [
+        "[Body section 1 goes here]",
+        "[Body section 2 goes here]",
+        "[Body section 3 goes here]",
+        "[Body section 4 goes here]",
+        "[Body section 5 goes here]",
+        "[Body section 6 goes here]"
+      ],
+      "container_class": null
+    },
+    {
+      "label": "product_presentation",
+      "count": 4,
+      "placeholders": [
+        "[Product presentation part 1 goes here]",
+        "[Product presentation part 2 goes here]",
+        "[Product presentation part 3 goes here]",
+        "[Product presentation part 4 goes here]"
+      ],
+      "container_class": null
+    },
+    {
+      "label": "reviews",
+      "count": 6,
+      "placeholders": [
+        "[Review 1 goes here]",
+        "[Review 2 goes here]",
+        "[Review 3 goes here]",
+        "[Review 4 goes here]",
+        "[Review 5 goes here]",
+        "[Review 6 goes here]"
+      ],
+      "container_class": "bg-white rounded-2xl shadow-lg overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-xl"
+    }
+  ],
+  "singletons": [
+    "[Category goes here]",
+    "[Headline goes here]",
+    "[Author info goes here]",
+    "[Lead section goes here]",
+    "[Case study goes here]",
+    "[Urgency and Scarcity goes here]",
+    "[Offer section goes here]"
+  ]
+}

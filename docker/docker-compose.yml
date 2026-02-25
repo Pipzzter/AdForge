@@ -4,7 +4,7 @@ services:
       context: ..
       dockerfile: docker/backend/Dockerfile
       target: ${APP_ENV:-development}
-    container_name: backend
+    container_name: med-agents-backend
     env_file:
       - ../backend/.env
     environment:
@@ -22,7 +22,7 @@ services:
       context: ..
       dockerfile: docker/frontend/Dockerfile
       target: ${APP_ENV:-development}
-    container_name: frontend
+    container_name: med-agents-frontend
     ports:
       - "5173:5173"
     volumes:
@@ -30,12 +30,12 @@ services:
       - /app/node_modules
     depends_on:
       - backend
-    environment:
-      - VITE_API_URL=http://localhost:8000
+    env_file:
+      - ../frontend/.env
 
   db:
     image: postgres:latest
-    container_name: postgres
+    container_name: med-agents-db
     restart: unless-stopped
     env_file:
       - ../backend/.env

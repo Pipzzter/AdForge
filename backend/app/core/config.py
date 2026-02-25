@@ -61,6 +61,9 @@ class Settings:
     )
     log_level: str = field(default_factory=lambda: _env_optional("LOG_LEVEL") or "INFO")
 
+    # AI/LLM Settings
+    gemini_api_key: str = field(default_factory=lambda: _env_required("GEMINI_API_KEY"))
+
 
 @lru_cache
 def get_settings() -> Settings:

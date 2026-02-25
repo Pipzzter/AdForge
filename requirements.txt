@@ -27,3 +27,7 @@ pytest
 pytest-asyncio
 tenacity
 pydantic-settings
+google-genai
+beautifulsoup4
+lxml
+

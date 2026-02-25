@@ -1,0 +1,56 @@
+{
+  "id": "template_001",
+  "name": "Template 001",
+  "file": "template_001.html",
+  "groups": [
+    {
+      "label": "body_sections",
+      "count": 5,
+      "placeholders": [
+        "[Body section 1 goes here]",
+        "[Body section 2 goes here]",
+        "[Body section 3 goes here]",
+        "[Body section 4 goes here]",
+        "[Body section 5 goes here]"
+      ],
+      "container_class": null
+    },
+    {
+      "label": "social_proofs",
+      "count": 3,
+      "placeholders": [
+        "[Social proof 1 goes here]",
+        "[Social proof 2 goes here]",
+        "[Social proof 3 goes here]"
+      ],
+      "container_class": "col-12 col-md-4 text-center esp-topo"
+    },
+    {
+      "label": "reviews",
+      "count": 6,
+      "placeholders": [
+        "[Reviews goes here 1 ]",
+        "[Reviews goes here2 ]",
+        "[Reviews goes here 3 ]",
+        "[Reviews goes here 4 ]",
+        "[Reviews goes here 5 ]",
+        "[Reviews goes here 6 ]"
+      ],
+      "container_class": "bg-white rounded-lg overflow-hidden shadow-md transition-transform hover:scale-[1.02] duration-300"
+    }
+  ],
+  "singletons": [
+    "[Headline goes here]",
+    "[Hook goes here]",
+    "[Author info goes here]",
+    "[Date of last edit goes here]",
+    "[Introduction agitation goes here]",
+    "[Product presentation goes here]",
+    "[Future pacing goes here]",
+    "[Conspiracy section goes here]",
+    "[Main Social proof goes here]",
+    "[Offer section goes here]",
+    "[Studies goes here]"
+  ]
+}
+

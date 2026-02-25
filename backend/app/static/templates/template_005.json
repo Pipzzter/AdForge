@@ -1,0 +1,66 @@
+{
+  "id": "template_005",
+  "name": "Template 005",
+  "file": "template_005.html",
+  "groups": [
+    {
+      "label": "list_item_titles",
+      "count": 5,
+      "placeholders": [
+        "[List item 1 Title goes here]",
+        "[List item 2 Title goes here]",
+        "[List item 3 Title goes here]",
+        "[List item 4 Title goes here]",
+        "[List item 5 Title goes here]"
+      ],
+      "container_class": null
+    },
+    {
+      "label": "list_item_bodies",
+      "count": 5,
+      "placeholders": [
+        "[List item 1 Body goes here]",
+        "[List item 2 Body goes here]",
+        "[List item 3 Body goes here]",
+        "[List item 4 Body goes here]",
+        "[List item 5 Body goes here]"
+      ],
+      "container_class": null
+    },
+    {
+      "label": "mid_page_testimonials",
+      "count": 3,
+      "placeholders": [
+        "[Mid-page Testimonials 1\u00a0 goes here]",
+        "[Mid-page Testimonials 2 goes here]",
+        "[Mid-page Testimonials 3 goes here]"
+      ],
+      "container_class": "exp-card"
+    },
+    {
+      "label": "bottom_reviews",
+      "count": 6,
+      "placeholders": [
+        "[Bottom Reviews 1 goes here]",
+        "[Bottom Reviews 2 goes here]",
+        "[Bottom Reviews 3 goes here]",
+        "[Bottom Reviews 4\u00a0 goes here]",
+        "[Bottom Reviews\u00a0 5 goes here]",
+        "[Bottom Reviews 5 goes here]"
+      ],
+      "container_class": "review-card"
+    }
+  ],
+  "singletons": [
+    "[Category goes here]",
+    "[Headline goes here]",
+    "[Sub-headline goes here]",
+    "[Author info goes here]",
+    "[Lead section goes here]",
+    "[Product Reveal goes here]",
+    "[Ingredients Intro goes here]",
+    "[Offer Intro goes here]",
+    "[Offer Details &amp; Bonuses goes here]",
+    "[References goes here]"
+  ]
+}

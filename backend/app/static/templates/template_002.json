@@ -1,0 +1,68 @@
+{
+  "id": "template_002",
+  "name": "Template 002",
+  "file": "template_002.html",
+  "groups": [
+    {
+      "label": "body_text_blocks",
+      "count": 12,
+      "placeholders": [
+        "[Body text block 1 goes here]",
+        "[Body text block 2 goes here]",
+        "[Body text block 3 goes here]",
+        "[Body text block 4 goes here]",
+        "[Body text block 5 goes here]",
+        "[Body text block 6 goes here]",
+        "[Body text block 7 goes here]",
+        "[Body text block 8 goes here]",
+        "[Body text block 9 goes here]",
+        "[Body text block 10 goes here]",
+        "[Body text block 11 goes here]",
+        "[Body text block 12 goes here]"
+      ],
+      "container_class": null
+    },
+    {
+      "label": "product_presentation",
+      "count": 10,
+      "placeholders": [
+        "[Product presentation part 1 goes here]",
+        "[Product presentation part 2 goes here]",
+        "[Product presentation part 3 goes here]",
+        "[Product presentation part 4 goes here]",
+        "[Product presentation part 5 goes here]",
+        "[Product presentation part 6 goes here]",
+        "[Product presentation part 7 goes here]",
+        "[Product presentation part 8 goes here]",
+        "[Product presentation part 9 goes here]",
+        "[Product presentation part 10 goes here]"
+      ],
+      "container_class": null
+    },
+    {
+      "label": "reviews",
+      "count": 5,
+      "placeholders": [
+        "[Review 1 goes here]",
+        "[Review 2 goes here]",
+        "[Review 3 goes here]",
+        "[Review 4 goes here]",
+        "[Review 5 goes here]"
+      ],
+      "container_class": "bg-white rounded-lg overflow-hidden shadow-md transition-transform hover:scale-[1.02] duration-300"
+    }
+  ],
+  "singletons": [
+    "[Headline goes here]",
+    "[Sub-headline goes here]",
+    "[Author info goes here]",
+    "[Article editing info goes here]",
+    "[Social proof goes here]",
+    "[Bullet Benfits section goes here]",
+    "[Case study goes here]",
+    "[Options goes here]",
+    "[Offer section goes here]",
+    "[Offer section 2 goes here]",
+    "[studies 3 goes here]"
+  ]
+}
