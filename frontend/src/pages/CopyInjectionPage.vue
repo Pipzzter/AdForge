@@ -42,11 +42,14 @@ onMounted(async () => {
 watch(selectedTemplateId, async (id) => {
   if (!id) return
   try {
+    console.log('Fetching CSS for template:', id)
     templateCss.value = await copyInjectionApi.getTemplateCss(id)
-  } catch {
+    console.log('CSS loaded, length:', templateCss.value.length)
+  } catch (e) {
+    console.error('Failed to fetch CSS:', e)
     templateCss.value = ''
   }
-})
+}, { immediate: true })
 
 async function handleSubmit() {
   if (!selectedTemplateId.value || !rawCopy.value.trim()) {
@@ -84,9 +87,24 @@ function injectCssIntoHtml(html: string, css: string, asLink = false): string {
     : `${tag}\n${html}`
 }
 
+/**
+ * Replace relative /static/generated/ paths with absolute URLs so images
+ * load correctly when the HTML is opened as a Blob URL or downloaded as a ZIP.
+ */
+function resolveImageUrls(html: string, absolute: boolean): string {
+  const base = absolute
+    ? (import.meta.env.VITE_API_URL?.replace('/api/v1', '') || window.location.origin)
+    : ''
+  return html.replace(
+    /src="(\/static\/generated\/[^"]+)"/g,
+    (_, path) => `src="${base}${path}"`,
+  )
+}
+
 function openPreview() {
   if (!result.value?.html) return
-  const html = injectCssIntoHtml(result.value.html, templateCss.value)
+  let html = resolveImageUrls(result.value.html, true)
+  html = injectCssIntoHtml(html, templateCss.value)
   const blob = new Blob([html], { type: 'text/html' })
   const url = URL.createObjectURL(blob)
   window.open(url, '_blank')
@@ -95,10 +113,14 @@ function openPreview() {
 
 async function downloadZip() {
   if (!result.value?.html) return
-  const html = injectCssIntoHtml(result.value.html, templateCss.value, true)
+  console.log('Download ZIP - CSS length:', templateCss.value.length)
+  // For ZIP: keep relative URLs since images are served separately
+  let html = resolveImageUrls(result.value.html, true)
+  html = injectCssIntoHtml(html, templateCss.value, true)
   const zip = new JSZip()
   zip.file('index.html', html)
   zip.file('style.css', templateCss.value)
+  console.log('ZIP created with style.css length:', templateCss.value.length)
   const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -176,6 +198,9 @@ async function downloadZip() {
       <div v-if="result.placeholders_found.length > 0" class="mb-4">
         <h3 class="text-sm font-medium text-slate-400 mb-2">
           Placeholders Found: {{ result.placeholders_found.length }}
+          <span v-if="result.images_generated" class="ml-4 text-blue-400">
+            🖼️ Images Generated: {{ result.images_generated }}
+          </span>
         </h3>
         <div class="flex flex-wrap gap-2">
           <span

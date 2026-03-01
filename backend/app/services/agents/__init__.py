@@ -16,20 +16,26 @@ Each agent is independent and operates as a standalone tool.
 """
 
 from app.services.agents.base import BaseAgent
+from app.services.agents.image_client import GeminiImageClient, ImageType
 from app.services.agents.llm_client import GeminiClient, GeminiResponse
 from app.services.agents.copy_injection import (
     CopyInjectionAgent,
     CopyInjectionInput,
     CopyInjectionOutput,
+    TemplateService,
+    TemplateSummary,
 )
 
 __all__ = [
     "BaseAgent",
     "GeminiClient",
     "GeminiResponse",
+    "GeminiImageClient",
+    "ImageType",
     "CopyInjectionAgent",
     "CopyInjectionInput",
     "CopyInjectionOutput",
+    "TemplateService",
+    "TemplateSummary",
 ]
-
 

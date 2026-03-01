@@ -1,407 +1,280 @@
 """
-Copy & Image Injection Agent Implementation
-============================================
+Copy Injection Agent
+====================
 
-Core logic for Agent 1 - fills HTML templates with marketing copy.
-
-Flow:
-1. Extract all placeholders from HTML template (pattern: [Something goes here])
-2. Send placeholders + raw copy to LLM
-3. LLM generates content for each placeholder based on the raw copy
-4. Replace placeholders in template with generated content
-5. Return filled HTML
+Main agent that orchestrates the copy injection process:
+1. Load template
+2. Parse raw copy using LLM
+3. Fill repeatable sections
+4. Fill simple placeholders
+5. Generate images
+6. Return final HTML
 """
 
 import logging
 import re
-from typing import Optional
-
-from google.genai.types import ThinkingLevel
+from datetime import datetime
 
 from app.services.agents.base import BaseAgent
-from app.services.agents.copy_injection.adjuster import TemplateAdjuster
 from app.services.agents.copy_injection.schemas import (
     CopyInjectionInput,
     CopyInjectionOutput,
-    CopyStructureAnalysis,
-    PlaceholderMapping,
-    PlacementSummary,
 )
 from app.services.agents.copy_injection.template_service import TemplateService
-from app.services.agents.llm_client import GeminiClient
+from app.services.agents.copy_injection.copy_parser import CopyParser
+from app.services.agents.copy_injection.placeholder_filler import (
+    PlaceholderFiller,
+    fill_body_item,
+    fill_review_item,
+    fill_social_proof_item,
+)
+from app.services.agents.copy_injection.image_generator import ImageGenerator
 
 logger = logging.getLogger(__name__)
-
-# Regex pattern for placeholders like [Headline goes here], [Body section 1 goes here]
-PLACEHOLDER_PATTERN = r'\[[^\]]*(?:goes here|Goes here|Goes Here)[^\]]*\]'
-
-COPY_STRUCTURE_PROMPT = """You are analyzing advertorial copy to count how many distinct items exist for each content group.
-
-## CONTENT GROUPS TO COUNT
-{groups}
-
-## RAW ADVERTORIAL COPY
-{raw_copy}
-
-## INSTRUCTIONS
-- Read the copy carefully and count how many distinct items exist for EACH group listed above.
-- A "body section" is a distinct paragraph or topic block in the main article body.
-- A "review" or "testimonial" is a distinct customer quote or story.
-- Count ONLY what is actually present in the copy — do not invent content.
-- There is NO maximum — if the copy has 10 reviews, return 10.
-- Return exactly the group labels provided, with your count for each.
-"""
-
-COPY_INJECTION_SYSTEM_PROMPT = """You are an expert marketing copywriter. Your task is to fill HTML template placeholders with content from raw advertorial copy.
-
-## YOUR TASK
-Given a list of placeholders and raw advertorial copy, generate appropriate content for EACH placeholder.
-
-## PLACEHOLDERS TO FILL
-{placeholders}
-
-## RAW ADVERTORIAL COPY
-{raw_copy}
-
-## RULES
-1. Extract the appropriate section from the raw copy for each placeholder
-2. For [Headline goes here] - use the main headline or title from the copy
-3. For [Hook goes here] - use the attention-grabbing opening statement
-4. For [Author info goes here] - use author/expert information if available, or create a brief author attribution
-5. For [Date of last edit goes here] - use the publication or last updated date from the copy if present; otherwise use today's date formatted as "Last Updated Month YYYY"
-6. For [Introduction agitation goes here] - use the problem statement that agitates the reader's pain points
-7. For [Body section N goes here] - split the main body content into sections, maintaining the narrative flow
-8. For [Product presentation goes here] - use the product description/benefits section
-9. For [Future pacing goes here] - use content about what life looks like after using the product
-10. For [Conspiracy section goes here] - use any "hidden truth" or "what they don't want you to know" content
-11. For [Social proof N goes here] - use testimonials, case studies, or user stories
-12. For [Main Social proof goes here] - use the most compelling testimonial or proof element
-13. For [Offer section goes here] - use the pricing, guarantee, and call-to-action content
-14. For [Reviews goes here N] - use customer reviews/testimonials
-
-## IMPORTANT
-- Maintain the tone and style of the original copy
-- If a placeholder type has no matching content in the raw copy, create appropriate content that fits the marketing narrative
-- Do NOT include any HTML tags — just plain text
-- Separate distinct paragraphs with a blank line (double newline \\n\\n)
-- Each body section may contain multiple paragraphs separated by blank lines
-- Never merge multiple paragraphs into a single block of text"""
 
 
 class CopyInjectionAgent(BaseAgent[CopyInjectionInput, CopyInjectionOutput]):
     """
     Agent 1: Copy & Image Injection
 
-    Fills predefined HTML templates with marketing copy.
-
-    Process:
-    1. Extract placeholders from template
-    2. LLM maps raw copy to placeholders
-    3. Replace placeholders with generated content
+    Takes a template and raw advertorial copy, fills all placeholders
+    with appropriate content and generated images.
     """
 
-    def __init__(self, llm_client: Optional[GeminiClient] = None) -> None:
-        super().__init__(name="copy_injection")
-        self.llm_client = llm_client or GeminiClient()
-
-    def extract_placeholders(self, html_template: str) -> list[str]:
-        """
-        Extract all placeholders from the HTML template.
-
-        Finds patterns like:
-        - [Headline goes here]
-        - [Body section 1 goes here]
-        - [Reviews goes here 1 ]
-        """
-        placeholders = re.findall(PLACEHOLDER_PATTERN, html_template, re.IGNORECASE)
-        # Remove duplicates while preserving order
-        seen = set()
-        unique_placeholders = []
-        for p in placeholders:
-            if p not in seen:
-                seen.add(p)
-                unique_placeholders.append(p)
-        return unique_placeholders
+    def __init__(self) -> None:
+        super().__init__(name="CopyInjectionAgent")
+        self.copy_parser = CopyParser()
+        self.image_generator = ImageGenerator()
 
     def build_prompt(self, input_data: CopyInjectionInput) -> str:
-        """Build the prompt for the LLM (required by base class)."""
-        # For the base class contract — returns the fill prompt with no placeholders
-        # as a fallback. The real prompt is built inside process().
-        return self._build_prompt_internal(
-            placeholders=[],
-            raw_copy=input_data.raw_copy,
-            product_name=input_data.product_name,
-            product_category=input_data.product_category,
-        )
+        """Not used directly - copy_parser handles prompting."""
+        return ""
 
-    def _build_prompt_internal(
-        self,
-        placeholders: list[str],
-        raw_copy: str,
-        product_name: Optional[str] = None,
-        product_category: Optional[str] = None,
-    ) -> str:
-        """Build the prompt for the LLM."""
-        placeholders_list = "\n".join(f"- {p}" for p in placeholders)
-
-        prompt = COPY_INJECTION_SYSTEM_PROMPT.format(
-            placeholders=placeholders_list,
-            raw_copy=raw_copy,
-        )
-
-        if product_name:
-            prompt += f"\n\nPRODUCT NAME: {product_name}"
-        if product_category:
-            prompt += f"\nPRODUCT CATEGORY: {product_category}"
-
-        return prompt
-
-    @staticmethod
-    def _normalize(text: str) -> str:
-        """Normalize a placeholder string for fuzzy matching."""
-        return re.sub(r'\s+', ' ', text).strip().lower()
-
-    @staticmethod
-    def _format_content(content: str) -> str:
-        """
-        Convert plain-text content returned by the LLM into HTML paragraphs.
-
-        Splits on blank lines (double newline) and wraps each non-empty
-        paragraph in a <p> tag so the content renders with proper spacing
-        instead of collapsing into a wall of text.
-        """
-        paragraphs = re.split(r'\n\s*\n', content.strip())
-        formatted = "\n".join(
-            f"<p>{para.strip()}</p>"
-            for para in paragraphs
-            if para.strip()
-        )
-        return formatted or f"<p>{content.strip()}</p>"
-
-    def fill_template(
-        self,
-        html_template: str,
-        placeholder_mapping: PlaceholderMapping,
-        template_placeholders: list[str],
-    ) -> tuple[str, list[PlacementSummary]]:
-        """
-        Replace placeholders in the template with generated content.
-
-        Matches LLM-returned placeholder names against the actual placeholders
-        extracted from the template using exact → case-insensitive → normalized
-        fuzzy matching so minor LLM variations don't cause missed replacements.
-
-        Returns the filled HTML and a summary of placements.
-        """
-        filled_html = html_template
-        placements: list[PlacementSummary] = []
-
-        # Build a lookup: normalized placeholder text → content from LLM
-        llm_lookup: dict[str, str] = {}
-        for item in placeholder_mapping.placeholders:
-            llm_lookup[self._normalize(item.placeholder)] = item.content
-
-        # Iterate over the actual placeholders found in the template
-        for actual_placeholder in template_placeholders:
-            # 1. Exact match in LLM mapping
-            content: Optional[str] = next(
-                (item.content for item in placeholder_mapping.placeholders
-                 if item.placeholder == actual_placeholder),
-                None,
-            )
-
-            # 2. Normalized fuzzy match
-            if content is None:
-                content = llm_lookup.get(self._normalize(actual_placeholder))
-
-            if content is None:
-                placements.append(
-                    PlacementSummary(
-                        placeholder=actual_placeholder,
-                        content_preview="[NOT FOUND IN LLM RESPONSE]",
-                        filled=False,
-                    )
-                )
-                logger.warning("No LLM content for placeholder: %s", actual_placeholder)
-                continue
-
-            # Format plain text into <p>-wrapped paragraphs
-            formatted_content = self._format_content(content)
-
-            # Replace in template — use str.replace for exact, re.sub with
-            # lambda for case-insensitive to avoid backslash interpretation bugs
-            if actual_placeholder in filled_html:
-                filled_html = filled_html.replace(actual_placeholder, formatted_content)
-                logger.debug("Filled placeholder (exact): %s", actual_placeholder)
-            else:
-                pattern = re.escape(actual_placeholder)
-                if re.search(pattern, filled_html, re.IGNORECASE):
-                    filled_html = re.sub(
-                        pattern,
-                        lambda m, c=formatted_content: c,
-                        filled_html,
-                        flags=re.IGNORECASE,
-                    )
-                    logger.debug("Filled placeholder (case-insensitive): %s", actual_placeholder)
-                else:
-                    placements.append(
-                        PlacementSummary(
-                            placeholder=actual_placeholder,
-                            content_preview="[NOT FOUND IN TEMPLATE]",
-                            filled=False,
-                        )
-                    )
-                    logger.warning("Placeholder not found in template: %s", actual_placeholder)
-                    continue
-
-            placements.append(
-                PlacementSummary(
-                    placeholder=actual_placeholder,
-                    content_preview=content[:100] + "..." if len(content) > 100 else content,
-                    filled=True,
-                )
-            )
-
-        return filled_html, placements
+    def extract_placeholders(self, html: str) -> list[str]:
+        """Extract all placeholders from HTML (utility method for API)."""
+        return TemplateService.extract_placeholders(html)
 
     async def process(self, input_data: CopyInjectionInput) -> CopyInjectionOutput:
         """
-        Process the template and copy, returning filled HTML.
+        Process the copy injection request.
 
-        New flow:
-        1. Read template structure JSON (no LLM, instant)
-        2. LLM Call 1 — count how many of each group the copy contains
-        3. Read HTML from disk (no LLM, server-side only)
-        4. Adjust HTML — trim surplus slots / clone missing slots (no LLM)
-        5. LLM Call 2 — fill all remaining placeholders (existing logic)
-        6. Inject content into adjusted HTML
-        7. Return result
+        Args:
+            input_data: Template ID and raw copy
+
+        Returns:
+            CopyInjectionOutput with filled HTML and metadata
         """
-        logger.info(
-            "Processing copy injection: template_id=%s, copy_length=%d",
-            input_data.template_id,
-            len(input_data.raw_copy),
-        )
-
         try:
-            # ----------------------------------------------------------------
-            # Step 1: Read template structure from JSON
-            # ----------------------------------------------------------------
-            structure = TemplateService.get_structure(input_data.template_id)
             logger.info(
-                "Loaded structure for '%s': %d groups, %d singletons",
+                "Processing copy injection: template=%s, copy_length=%d",
                 input_data.template_id,
-                len(structure.groups),
-                len(structure.singletons),
+                len(input_data.raw_copy),
             )
 
-            # ----------------------------------------------------------------
-            # Step 2: LLM Call 1 — count what the copy actually contains
-            # ----------------------------------------------------------------
-            groups_description = "\n".join(
-                f"- {g.label} (template has {g.count} slots)"
-                for g in structure.groups
-            )
-            structure_prompt = COPY_STRUCTURE_PROMPT.format(
-                groups=groups_description,
-                raw_copy=input_data.raw_copy,
-            )
-            copy_analysis: CopyStructureAnalysis = await self.llm_client.generate_structured(
-                prompt=structure_prompt,
-                schema=CopyStructureAnalysis,
-                thinking_level=ThinkingLevel.LOW,
-            )
-            counts: dict[str, int] = {g.label: g.count for g in copy_analysis.groups}
-            logger.info("Copy structure analysis: %s", counts)
-
-            # ----------------------------------------------------------------
-            # Step 3: Read HTML from disk
-            # ----------------------------------------------------------------
+            # 1. Load template HTML and metadata
             html = TemplateService.get_html(input_data.template_id)
+            metadata = TemplateService.get_metadata(input_data.template_id)
 
-            # ----------------------------------------------------------------
-            # Step 4: Adjust HTML (trim / expand)
-            # ----------------------------------------------------------------
-            html, updated_structure = TemplateAdjuster.adjust(html, structure, counts)
-            logger.info(
-                "HTML adjusted for template '%s'", input_data.template_id
-            )
+            # Extract all placeholders for reporting
+            all_placeholders = TemplateService.extract_placeholders(html)
+            logger.info("Found %d placeholders in template", len(all_placeholders))
 
-            # ----------------------------------------------------------------
-            # Step 5: Extract placeholders from adjusted HTML
-            # ----------------------------------------------------------------
-            placeholders = self.extract_placeholders(html)
-            logger.info("Found %d unique placeholders after adjustment", len(placeholders))
-
-            if not placeholders:
-                logger.warning("No placeholders found after adjustment")
-                return CopyInjectionOutput(
-                    html=html,
-                    placeholders_found=[],
-                    placements=[],
-                    success=True,
-                    error_message="No placeholders found in template",
-                )
-
-            # ----------------------------------------------------------------
-            # Step 6: LLM Call 2 — fill placeholders (existing logic)
-            # ----------------------------------------------------------------
-            prompt = self._build_prompt_internal(
-                placeholders=placeholders,
+            # 2. Parse raw copy using LLM
+            parsed_copy = await self.copy_parser.parse(
                 raw_copy=input_data.raw_copy,
                 product_name=input_data.product_name,
                 product_category=input_data.product_category,
             )
-            placeholder_mapping = await self.llm_client.generate_structured(
-                prompt=prompt,
-                schema=PlaceholderMapping,
-                thinking_level=ThinkingLevel.LOW,
-            )
-            logger.info(
-                "LLM generated content for %d placeholders",
-                len(placeholder_mapping.placeholders),
+
+            # 3. Create filler and process template
+            filler = PlaceholderFiller(html, input_data.template_id)
+
+            # 4. Fill repeatable sections
+            # Body sections
+            filler.fill_repeat_section(
+                section_name="body",
+                items=parsed_copy.body_sections,
+                fill_item_func=fill_body_item,
             )
 
-            # ----------------------------------------------------------------
-            # Step 7: Fill template
-            # ----------------------------------------------------------------
-            filled_html, placements = self.fill_template(
-                html_template=html,
-                placeholder_mapping=placeholder_mapping,
-                template_placeholders=placeholders,
+            # Reviews
+            filler.fill_repeat_section(
+                section_name="review",
+                items=parsed_copy.reviews,
+                fill_item_func=fill_review_item,
             )
 
-            filled_count = sum(1 for p in placements if p.filled)
+            # Social proofs
+            filler.fill_repeat_section(
+                section_name="social_proof",
+                items=parsed_copy.social_proofs,
+                fill_item_func=fill_social_proof_item,
+            )
+
+            # 5. Fill simple (non-repeatable) placeholders
+            self._fill_simple_placeholders(filler, parsed_copy)
+
+            # 6. Get intermediate result
+            html, placements, _ = filler.get_result()
+
+            # 7. Remove empty optional sections BEFORE generating images
+            html = self._remove_empty_optional_sections(html, parsed_copy)
+
+            # 8. Generate images and replace placeholders
+            html = await self.image_generator.generate_all_images(html, parsed_copy)
+
+            # 9. Clean up any remaining unfilled placeholders
+            html = self._clean_unfilled_placeholders(html)
+
             logger.info(
-                "Copy injection complete: %d/%d placeholders filled",
-                filled_count,
-                len(placeholders),
+                "Copy injection complete: placements=%d, images=%d",
+                len(placements),
+                self.image_generator.generated_count,
             )
 
             return CopyInjectionOutput(
-                html=filled_html,
-                placeholders_found=placeholders,
+                html=html,
+                placeholders_found=all_placeholders,
                 placements=placements,
+                images_generated=self.image_generator.generated_count,
                 success=True,
             )
 
-        except FileNotFoundError as e:
-            logger.error("Template not found: %s", str(e))
-            return CopyInjectionOutput(
-                html="",
-                placeholders_found=[],
-                placements=[],
-                success=False,
-                error_message=str(e),
-            )
         except Exception as e:
-            logger.error("Copy injection failed: %s", str(e), exc_info=True)
+            logger.exception("Copy injection failed: %s", str(e))
             return CopyInjectionOutput(
                 html="",
                 placeholders_found=[],
                 placements=[],
+                images_generated=0,
                 success=False,
                 error_message=str(e),
             )
+    @staticmethod
+    def _fill_simple_placeholders(
+        filler: PlaceholderFiller,
+        parsed_copy,
+    ) -> None:
+        """Fill all simple (non-repeatable) placeholders."""
+
+        # Headline
+        filler.fill_simple("[Headline goes here]", parsed_copy.headline)
+
+        # Subheadline
+        if parsed_copy.subheadline:
+            filler.fill_simple("[Subheadline goes here]", parsed_copy.subheadline)
+
+        # Hook
+        if parsed_copy.hook:
+            filler.fill_simple("[Hook goes here]", parsed_copy.hook)
+
+        # Post category - always fill with default if not provided
+        post_category = parsed_copy.post_category
+        filler.fill_simple("[POST CATEGORY GOES HERE]", post_category)
+
+        # Author info
+        if parsed_copy.author_name:
+            filler.fill_simple("[Author info goes here]", parsed_copy.author_name)
+
+        # Date - use current date
+        current_date = datetime.now().strftime("%B %d, %Y")
+        filler.fill_simple("[Date of last edit goes here]", current_date)
+
+        # Introduction
+        if parsed_copy.introduction:
+            filler.fill_simple("[Introduction goes here]", parsed_copy.introduction)
+
+        # Product presentation - always fill title and content if product exists
+        if parsed_copy.product:
+            # Always fill product title (use default if not provided)
+            product_title = parsed_copy.product.title or "The Solution"
+            filler.fill_simple(
+                "[Product presentation title goes here]",
+                product_title,
+            )
+            filler.fill_simple(
+                "[Product presentation goes here]",
+                parsed_copy.product.content,
+            )
+
+        # Product reveal (template_004)
+        if parsed_copy.product_reveal:
+            filler.fill_simple("[Product reveal goes here]", parsed_copy.product_reveal)
+
+        # Solution discovery title (template_004)
+        if parsed_copy.solution_discovery_title:
+            filler.fill_simple("[Solution product discovery title goes here]", parsed_copy.solution_discovery_title)
+        elif parsed_copy.product and parsed_copy.product.title:
+            # Fallback: use product title if no specific solution discovery title
+            filler.fill_simple("[Solution product discovery title goes here]", parsed_copy.product.title)
+
+        # Main social proof (non-repeatable)
+        if parsed_copy.main_social_proof_title:
+            filler.fill_simple(
+                "[Main Social proof title goes here]",
+                parsed_copy.main_social_proof_title,
+            )
+        if parsed_copy.main_social_proof:
+            filler.fill_simple("[Main Social proof goes here]", parsed_copy.main_social_proof)
+
+        # Case study (non-repeatable)
+        if parsed_copy.case_study_title:
+            filler.fill_simple("[Case study title goes here]", parsed_copy.case_study_title)
+        if parsed_copy.case_study:
+            filler.fill_simple("[Case study goes here]", parsed_copy.case_study)
+
+        # Offer section - ALWAYS fill, even with defaults
+        if parsed_copy.offer:
+            offer_title = parsed_copy.offer.title or "Special Offer"
+            offer_content = parsed_copy.offer.content
+        else:
+            # Fallback: generate offer content from product info if available
+            offer_title = "Special Offer"
+            if parsed_copy.product:
+                offer_content = f"Get {parsed_copy.product.title or 'this product'} now and experience the benefits for yourself. Limited time offer available."
+            else:
+                offer_content = "Take advantage of this special offer today. Limited availability."
+
+        filler.fill_simple("[Offer section title goes here]", offer_title)
+        filler.fill_simple("[Offer section goes here]", offer_content)
+
+        # References
+        if parsed_copy.references:
+            filler.fill_simple("[References goes here]", parsed_copy.references)
+
+    def _remove_empty_optional_sections(self, html: str, parsed_copy) -> str:
+        """
+        Remove entire optional sections from HTML when they have no content.
+        Uses OPTIONAL markers in templates: <!--OPTIONAL:section_name:START--> ... <!--OPTIONAL:section_name:END-->
+        """
+        # Case study section - remove if no content
+        if not parsed_copy.case_study:
+            html = self._remove_optional_block(html, "case_study")
+            logger.info("Removed empty case study section from HTML")
+
+        # Main social proof section - remove if no content
+        if not parsed_copy.main_social_proof:
+            html = self._remove_optional_block(html, "main_social_proof")
+            logger.info("Removed empty main social proof section from HTML")
+
+        return html
+
+    def _remove_optional_block(self, html: str, section_name: str) -> str:
+        """
+        Remove an optional block marked with OPTIONAL comments.
+        Pattern: <!--OPTIONAL:section_name:START--> ... <!--OPTIONAL:section_name:END-->
+        """
+        pattern = rf'<!--\s*OPTIONAL:{section_name}:START\s*-->.*?<!--\s*OPTIONAL:{section_name}:END\s*-->'
+        html = re.sub(pattern, '', html, flags=re.DOTALL | re.IGNORECASE)
+        return html
+
+    def _clean_unfilled_placeholders(self, html: str) -> str:
+        """Remove any remaining unfilled placeholders."""
+        # Remove text placeholders
+        html = re.sub(r'\[[^[\]]*goes here[^[\]]*]', '', html, flags=re.IGNORECASE)
+        # Remove image placeholder markers that weren't filled
+        html = re.sub(r'__IMG_PLACEHOLDER_[^_]+__', '', html)
+        return html
+
 
 

@@ -1,29 +1,108 @@
-# FastAPI + Vue Starter Kit
+# Med-Agents
 
-Kick-start fullstack projects with a FastAPI backend, Vue 3 frontend, PostgreSQL via Docker Compose, opinionated tooling, and ready-to-run developer workflows.
+AI-powered multi-agent system for medical advertorial generation. The platform uses specialized agents to automate the creation of compliant, high-converting advertorial content with AI-generated images.
 
-- Docker-first workflow: `docker compose` spins up the API, Vue frontend, and Postgres.
-- Frontend: Vue 3 + TypeScript + Vite + Pinia + Vue Router with hot module replacement.
-- Database layer: PostgreSQL plus Alembic migrations (see `backend/alembic`) and async SQLAlchemy sessions out of the box.
-- Quality gates: pytest suite (selective pre-commit hook) and formatting via Black/isort/Ruff to keep diffs tidy.
+## Features
+
+- **Copy Injection Agent**: Parses raw advertorial copy and injects it into HTML templates
+- **AI Image Generation**: Uses Gemini 2.5 Flash for photorealistic image generation (headline, body, product images)
+- **Template System**: HTML templates with placeholders for dynamic content injection
+- **Multi-Agent Architecture**: Extensible base agent class for adding new specialized agents
 
 ## Project Structure
 
 ```
-├── backend/          # FastAPI application
-├── frontend/         # Vue 3 + Vite application
-├── docker/           # Docker configuration
-│   ├── backend/
-│   │   └── Dockerfile
-│   ├── frontend/
-│   │   ├── Dockerfile
-│   │   └── nginx.conf
-│   ├── docker-compose.yml
-│   └── .dockerignore
-└── scripts/          # Utility scripts
+med-agents/
+├── backend/
+│   ├── app/
+│   │   ├── api/v1/routers/        # API endpoints
+│   │   │   ├── auth.py            # Authentication routes
+│   │   │   ├── copy_injection.py  # Copy injection agent routes
+│   │   │   ├── health.py          # Health check routes
+│   │   │   └── user.py            # User management routes
+│   │   ├── core/                  # Config, security, logging
+│   │   ├── db/                    # Database session, base
+│   │   ├── middleware/            # Request timing middleware
+│   │   ├── models/                # SQLAlchemy models
+│   │   ├── schemas/               # Pydantic schemas
+│   │   ├── services/
+│   │   │   ├── agents/            # AI Agent implementations
+│   │   │   │   ├── base.py        # Abstract base agent class
+│   │   │   │   ├── llm_client.py  # Gemini LLM client
+│   │   │   │   ├── image_client.py # Gemini image generation
+│   │   │   │   └── copy_injection/ # Agent 1: Copy Injection
+│   │   │   │       ├── agent.py           # Main orchestrator
+│   │   │   │       ├── copy_parser.py     # LLM-based copy parsing
+│   │   │   │       ├── image_generator.py # Image generation
+│   │   │   │       ├── placeholder_filler.py # Template filling
+│   │   │   │       ├── template_service.py   # Template loading
+│   │   │   │       └── schemas.py         # Data models
+│   │   │   ├── auth.py
+│   │   │   ├── health.py
+│   │   │   └── user.py
+│   │   ├── static/
+│   │   │   ├── generated/         # Generated advertorial output
+│   │   │   └── new_templates/     # HTML templates
+│   │   └── utils/
+│   ├── alembic/                   # Database migrations
+│   └── tests/                     # pytest tests
+├── frontend/
+│   └── src/
+│       ├── api/
+│       │   └── agents/            # Agent API clients
+│       │       └── copyInjection.ts
+│       ├── components/
+│       │   ├── features/          # Feature-specific components
+│       │   └── layout/            # Layout components
+│       ├── layouts/
+│       │   └── DefaultLayout.vue
+│       ├── pages/
+│       │   ├── HomePage.vue
+│       │   ├── CopyInjectionPage.vue
+│       │   ├── CompliancePage.vue
+│       │   ├── OptimizationPage.vue
+│       │   ├── ResearchPage.vue
+│       │   └── TranslationPage.vue
+│       ├── router/
+│       ├── stores/
+│       └── types/
+│           └── agent.ts           # Agent type definitions
+├── docs/                          # Documentation
+│   └── AGENT_1_COPY_INJECTION.md  # Agent 1 full documentation
+├── docker/                        # Docker configuration
+├── scripts/                       # Utility scripts
+└── .github/                       # GitHub workflows & Copilot instructions
 ```
 
+## Tech Stack
+
+### Backend
+- Python 3.12
+- FastAPI
+- SQLAlchemy (async) + PostgreSQL
+- Alembic migrations
+- Google Gemini API (LLM + Image Generation)
+- Pydantic v2
+- pytest + pytest-asyncio
+
+### Frontend
+- Vue 3 (Composition API, `<script setup>`)
+- TypeScript
+- Vite
+- Pinia
+- Vue Router 4
+- Tailwind CSS
+
+### Infrastructure
+- Docker + Docker Compose
+
 ## Setup
+
+### Prerequisites
+- Python 3.12+
+- Node.js 18+
+- Docker & Docker Compose
+- Google Gemini API key
 
 ### Create & activate virtual environment (backend)
 ```powershell
@@ -38,89 +117,138 @@ cd frontend
 npm install
 ```
 
+### Environment configuration
+Copy `backend/.env.example` to `backend/.env` and configure:
+```env
+DATABASE_URL=postgresql+psycopg2://postgres:postgres@localhost:5432/backend_db
+GEMINI_API_KEY=your-gemini-api-key
+SECRET_KEY=your-secret-key
+```
+
+For Docker, use `DATABASE_URL=postgresql+psycopg2://postgres:postgres@db:5432/backend_db`.
+
 ### Run Docker services
-If you start for the first time:
+First time:
 ```powershell
 docker compose -f docker/docker-compose.yml up -d --build
 ```
-Else:
+Subsequent runs:
 ```powershell
 docker compose -f docker/docker-compose.yml up -d
 ```
 
-### Apply database migrations (inside backend container)
+### Apply database migrations
 ```powershell
 cd docker
 docker compose exec backend /bin/bash
-alembic revision --autogenerate -m "init schema"
 alembic upgrade head
 exit
 ```
 
-### Run the app locally (optional)
+### Run locally (development)
 ```powershell
+# Backend
 uvicorn app.main:app --reload
+
+# Frontend (separate terminal)
+cd frontend
+npm run dev
 ```
 
-Visit `http://localhost:8000/api/v1/health/` to verify the service is responding.
+## Access the Application
 
-### Environment configuration
-Copy `backend/.env.example` to `backend/.env` (and adjust secrets), then ensure Docker uses it by keeping the file in place. For container-specific overrides, duplicate it as `.env.docker` and update `DATABASE_URL=postgresql+psycopg2://postgres:postgres@db:5432/backend_db`.
+- **Frontend**: http://localhost:5173
+- **Backend API**: http://localhost:8000
+- **API Docs**: http://localhost:8000/docs
+- **Health Check**: http://localhost:8000/api/v1/health/
 
-## Run tests
+## API Endpoints
 
-### Run tests (inside backend container)
-- Run only a single test file:
+### Health
+- `GET /api/v1/health/` – Service heartbeat
+
+### Authentication
+- `POST /api/v1/auth/register` – Register user & receive JWT
+- `POST /api/v1/auth/token` – Obtain JWT via credentials
+
+### Users
+- `POST /api/v1/user/` – Create user
+- `GET /api/v1/user/` – List users
+
+### Agents
+- `POST /api/v1/copy-injection/process` – Process copy injection
+- `GET /api/v1/copy-injection/templates` – List available templates
+
+## Agents
+
+### Agent 1: Copy & Image Injection
+
+> 📖 **Full Documentation:** [docs/AGENT_1_COPY_INJECTION.md](docs/AGENT_1_COPY_INJECTION.md)
+>
+> 🧪 **Testing Ground:** [CheckoutChamp Funnel Builder](https://app.checkoutchamp.com/editfunnel/b263cdf6-2082-4fec-9565-77578efc1772)
+
+Automatically generates complete landing pages from HTML templates and raw advertorial copy.
+
+**Pipeline:**
+1. Load HTML template with placeholders
+2. Parse raw copy using Gemini 2.5 Flash LLM (structured output)
+3. Fill repeatable sections (body, reviews, social proof)
+4. Fill simple placeholders (headline, hook, product, offer)
+5. Generate AI images using Gemini 2.5 Flash Image
+6. Return complete HTML ready to publish
+
+**Key Features:**
+- Template-aware content placement
+- Dynamic section cloning (adapts to content length)
+- AI-powered copy parsing (extracts structure from raw text)
+- Context-aware image generation (embedded as base64)
+- Automatic cleanup of empty optional sections
+
+### Image Generation Guidelines
+
+Three types of images are generated following strict advertorial guidelines:
+
+| Type | Goal | Style |
+|------|------|-------|
+| **Headline** | Create extreme curiosity | Editorial, candid, NO product |
+| **Body** | Explain concepts simply | Educational, clear focus |
+| **Product** | Demonstrate mechanism | Trustworthy, clinical-but-human |
+
+## Running Tests
+
 ```powershell
+# All tests
 pytest
-```
 
-
-
-- Run only a single test file:
-```powershell
+# Specific directory
 pytest tests/services
+
+# With coverage
+pytest --cov=app tests/
 ```
 
+## Git Hooks
 
-## Git hooks: format + lint + tests
-The repository ships a `.pre-commit-config.yaml` that runs formatting (Black/isort/Ruff) on every commit and executes a selective pytest check for changed tests.
-
-- Pre-commit local hook: the project uses a local hook entry that runs `python scripts/run_changed_pytest.py` with `pass_filenames: true`.
-- Behavior: pre-commit passes only the changed/staged file paths to the helper; the helper filters to test files (paths containing `tests` and ending in `.py`), prepends the `backend` directory to `PYTHONPATH`, and invokes `pytest` from the repository root. This means only touched test modules are executed automatically during commits, keeping commits fast while still exercising modified tests.
-
-To install and run hooks locally:
+Pre-commit hooks are configured for code quality:
 ```powershell
-# install the pre-commit hooks into .git/hooks
+# Install hooks
 pre-commit install
-# optionally run all configured hooks against the whole repo (warm-up)
+
+# Run on all files
 pre-commit run --all-files
 ```
 
-If you want the pre-commit hook to run the full pytest suite instead of only changed files, update `.pre-commit-config.yaml` (remove `pass_filenames: true` or configure the hook to always run) or run `pytest` directly as shown above.
+Hooks include: Black, isort, Ruff, and selective pytest for changed files.
 
-## Environments & Docker targets
-Set `APP_ENV` to `development`, `staging`, or `production` to pick the matching Docker multi-stage target and application mode. The value is also loaded from `backend/.env` inside containers.
+## Environment Modes
 
 ```powershell
-# development (default)
+# Development (default)
 docker compose -f docker/docker-compose.yml up -d
 
-# staging build/run
+# Staging
 APP_ENV=staging docker compose -f docker/docker-compose.yml up -d --build
 
-# production build/run
+# Production
 APP_ENV=production docker compose -f docker/docker-compose.yml up -d --build
 ```
-
-## Access the application
-- Frontend: `http://localhost:5173`
-- Backend API: `http://localhost:8000`
-- API Health: `http://localhost:8000/api/v1/health/`
-
-## API quick reference
-- `GET /api/v1/health/` – service heartbeat (returns status/timestamp)
-- `POST /api/v1/user/` – create user (requires JSON payload matching `UserCreate`)
-- `GET /api/v1/user/` – list users
-- `POST /api/v1/auth/register` – register user & receive JWT
-- `POST /api/v1/auth/token` – obtain JWT via credentials form

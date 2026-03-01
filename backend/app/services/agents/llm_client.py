@@ -3,7 +3,7 @@ Gemini LLM Client
 =================
 
 Client for interacting with Google's Gemini API using the official google-genai SDK.
-Supports Gemini 3.1 Pro with thinking_level parameter.
+Supports Gemini 2.5 Flash with thinking_level parameter.
 """
 
 import asyncio
@@ -13,15 +13,14 @@ from typing import Optional, Type, TypeVar
 
 from google import genai
 from google.genai import types
-from google.genai.types import ThinkingLevel
 from pydantic import BaseModel
 
 from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
 
-# Gemini 3.1 Pro model ID (preview as of Feb 2026)
-DEFAULT_MODEL = "gemini-3.1-pro-preview"
+# Gemini 2.5 Flash model ID
+DEFAULT_MODEL = "gemini-2.5-flash"
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -39,7 +38,7 @@ class GeminiClient:
     """
     Client for Google Gemini API using the official google-genai SDK.
 
-    Supports Gemini 3.1 Pro with:
+    Supports Gemini 2.5 Flash with:
     - thinking_level parameter (low/medium/high)
     - Structured output via Pydantic models
     - Retry logic with exponential backoff for rate limits
@@ -63,7 +62,6 @@ class GeminiClient:
     async def generate(
         self,
         prompt: str,
-        thinking_level: ThinkingLevel = ThinkingLevel.LOW,
         max_tokens: int = 65536,
         max_retries: int = 3,
     ) -> GeminiResponse:
@@ -72,7 +70,6 @@ class GeminiClient:
 
         Args:
             prompt: The prompt to send to the model
-            thinking_level: low/medium/high - controls reasoning depth
             max_tokens: Maximum output tokens (default 64k)
             max_retries: Number of retries for transient errors
 
@@ -80,14 +77,12 @@ class GeminiClient:
             GeminiResponse with generated text and token usage
         """
         config = types.GenerateContentConfig(
-            thinking_config=types.ThinkingConfig(thinking_level=thinking_level),
             max_output_tokens=max_tokens,
         )
 
         logger.debug(
-            "Sending request to Gemini API: model=%s, thinking_level=%s",
+            "Sending request to Gemini API: model=%s",
             self.model,
-            thinking_level,
         )
 
         return await self._call_with_retry(prompt, config, max_retries)
@@ -96,7 +91,6 @@ class GeminiClient:
         self,
         prompt: str,
         schema: Type[T],
-        thinking_level: ThinkingLevel = ThinkingLevel.LOW,
         max_tokens: int = 65536,
         max_retries: int = 3,
     ) -> T:
@@ -106,7 +100,6 @@ class GeminiClient:
         Args:
             prompt: The prompt to send to the model
             schema: Pydantic model class to parse the response into
-            thinking_level: low/medium/high - controls reasoning depth
             max_tokens: Maximum output tokens
             max_retries: Number of retries for transient errors
 
@@ -114,17 +107,15 @@ class GeminiClient:
             Instance of the provided Pydantic schema
         """
         config = types.GenerateContentConfig(
-            thinking_config=types.ThinkingConfig(thinking_level=thinking_level),
             max_output_tokens=max_tokens,
             response_mime_type="application/json",
             response_json_schema=schema.model_json_schema(),
         )
 
         logger.debug(
-            "Sending structured request to Gemini API: model=%s, schema=%s, thinking_level=%s",
+            "Sending structured request to Gemini API: model=%s, schema=%s",
             self.model,
             schema.__name__,
-            thinking_level,
         )
 
         response = await self._call_with_retry(prompt, config, max_retries)

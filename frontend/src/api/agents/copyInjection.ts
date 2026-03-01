@@ -26,6 +26,7 @@ export interface CopyInjectionOutput {
   html: string
   placeholders_found: string[]
   placements: PlacementSummary[]
+  images_generated: number
   success: boolean
   error_message?: string
 }
