@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <title>Article</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Georgia, 'Times New Roman', serif;
+      line-height: 1.8;
+      color: #333;
+      background: #fff;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    /* Header */
+    .article-header {
+      margin-bottom: 40px;
+      border-bottom: 1px solid #e5e5e5;
+      padding-bottom: 30px;
+    }
+
+    .headline {
+      font-size: 2.5rem;
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 16px;
+      color: #1a1a1a;
+    }
+
+    .hook {
+      font-size: 1.25rem;
+      color: #666;
+      font-style: italic;
+      margin-bottom: 24px;
+    }
+
+    .headline-image {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+      margin-bottom: 24px;
+    }
+
+    .meta {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 0.9rem;
+      color: #666;
+    }
+
+    .author-image {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .author-info {
+      font-weight: 500;
+    }
+
+    .date {
+      color: #999;
+    }
+
+    /* Content */
+    .introduction {
+      font-size: 1.1rem;
+      margin-bottom: 32px;
+      color: #444;
+    }
+
+    /* Body sections */
+    .body-section {
+      margin-bottom: 40px;
+    }
+
+    .body-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: #1a1a1a;
+    }
+
+    .body-image {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+      margin-bottom: 16px;
+    }
+
+    .body-content {
+      color: #444;
+    }
+
+    /* Product section */
+    .product-section {
+      background: #f9f9f9;
+      padding: 32px;
+      border-radius: 12px;
+      margin: 40px 0;
+    }
+
+    .product-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: #1a1a1a;
+    }
+
+    .product-image {
+      width: 100%;
+      max-width: 400px;
+      height: auto;
+      border-radius: 8px;
+      margin: 0 auto 16px;
+      display: block;
+    }
+
+    .product-content {
+      color: #444;
+    }
+
+    /* Social proof */
+    .social-proof-section {
+      margin: 40px 0;
+      padding: 24px;
+      background: #fafafa;
+      border-left: 4px solid #333;
+    }
+
+    .social-proof-quote {
+      font-size: 1.1rem;
+      font-style: italic;
+      margin-bottom: 16px;
+      color: #444;
+    }
+
+    .social-proof-person {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .social-proof-image {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .social-proof-name {
+      font-weight: 600;
+      color: #333;
+    }
+
+    /* Main social proof */
+    .main-social-proof {
+      text-align: center;
+      margin: 40px 0;
+      padding: 32px;
+      background: linear-gradient(135deg, #f5f5f5 0%, #fff 100%);
+      border-radius: 12px;
+      border: 1px solid #e5e5e5;
+    }
+
+    .main-social-proof-image {
+      max-width: 200px;
+      height: auto;
+      margin-bottom: 16px;
+    }
+
+    .main-social-proof-text {
+      font-size: 1.1rem;
+      color: #444;
+    }
+
+    /* Reviews */
+    .reviews-section {
+      margin: 40px 0;
+    }
+
+    .reviews-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .review {
+      padding: 24px;
+      margin-bottom: 20px;
+      background: #fff;
+      border: 1px solid #e5e5e5;
+      border-radius: 12px;
+    }
+
+    .review-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .review-image {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .review-name {
+      font-weight: 600;
+      color: #333;
+    }
+
+    .review-text {
+      color: #555;
+      font-style: italic;
+    }
+
+    /* Offer section */
+    .offer-section {
+      background: linear-gradient(135deg, #1a1a1a 0%, #333 100%);
+      color: #fff;
+      padding: 40px 32px;
+      border-radius: 16px;
+      margin: 40px 0;
+      text-align: center;
+    }
+
+    .offer-title {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .offer-image {
+      max-width: 300px;
+      height: auto;
+      border-radius: 8px;
+      margin: 16px auto;
+    }
+
+    .offer-content {
+      font-size: 1.1rem;
+      opacity: 0.9;
+    }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      body {
+        padding: 20px 16px;
+      }
+
+      .headline {
+        font-size: 1.75rem;
+      }
+
+      .hook {
+        font-size: 1.1rem;
+      }
+
+      .meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+
+      .product-section,
+      .offer-section {
+        padding: 24px 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Article Header -->
+  <header class="article-header">
+    <h1 class="headline" id="cc-id-headline">[Headline goes here]</h1>
+    <p class="hook" id="cc-id-hook">[Hook goes here]</p>
+    <img class="headline-image" id="cc-id-headline-image" src="[Headline image goes here]" alt="Article hero image">
+    <div class="meta">
+      <img class="author-image" id="cc-id-author-image" src="[Author image goes here]" alt="Author">
+      <span class="author-info" id="cc-id-author-info">[Author info goes here]</span>
+      <span class="date" id="cc-id-date">[Date of last edit goes here]</span>
+    </div>
+  </header>
+
+  <!-- Introduction -->
+  <section class="introduction" id="cc-id-introduction">
+    [Introduction goes here]
+  </section>
+
+  <!-- Body Sections (Repeatable) -->
+  <!-- REPEAT:body:START -->
+  <section class="body-section" id="cc-id-body-section">
+    <h2 class="body-title" id="cc-id-body-title">[Body section title goes here]</h2>
+    <img class="body-image" id="cc-id-body-image" src="[Body section image goes here]" alt="Section image">
+    <div class="body-content" id="cc-id-body-content">[Body section goes here]</div>
+  </section>
+  <!-- REPEAT:body:END -->
+
+  <!-- Product Presentation -->
+  <section class="product-section">
+    <h2 class="product-title" id="cc-id-product-title">[Product presentation title goes here]</h2>
+    <img class="product-image" id="cc-id-product-image" src="[Product presentation image goes here]" alt="Product">
+    <div class="product-content" id="cc-id-product-content">[Product presentation goes here]</div>
+  </section>
+
+  <!-- Social Proof (Repeatable) -->
+  <!-- REPEAT:social_proof:START -->
+  <aside class="social-proof-section" id="cc-id-social-proof">
+    <p class="social-proof-quote" id="cc-id-social-proof-quote">[Social proof goes here]</p>
+    <div class="social-proof-person">
+      <img class="social-proof-image" id="cc-id-social-proof-image" src="[Social proof person/group image goes here]" alt="Expert">
+      <span class="social-proof-name" id="cc-id-social-proof-name">[Social proof person/group goes here]</span>
+    </div>
+  </aside>
+  <!-- REPEAT:social_proof:END -->
+
+  <!-- Main Social Proof -->
+  <section class="main-social-proof">
+    <img class="main-social-proof-image" id="cc-id-main-social-proof-image" src="[Main social proof image goes here]" alt="Social proof">
+    <p class="main-social-proof-text" id="cc-id-main-social-proof">[Main Social proof goes here]</p>
+  </section>
+
+  <!-- Reviews (Repeatable) -->
+  <section class="reviews-section">
+    <h2 class="reviews-title">What People Are Saying</h2>
+    <!-- REPEAT:review:START -->
+    <div class="review" id="cc-id-review">
+      <div class="review-header">
+        <img class="review-image" id="cc-id-review-image" src="[Review person image goes here]" alt="Reviewer">
+        <span class="review-name" id="cc-id-review-name">[Review person name goes here]</span>
+      </div>
+      <p class="review-text" id="cc-id-review-text">[Review goes here]</p>
+    </div>
+    <!-- REPEAT:review:END -->
+  </section>
+
+  <!-- Offer Section -->
+  <section class="offer-section">
+    <h2 class="offer-title" id="cc-id-offer-title">[Offer section title goes here]</h2>
+    <img class="offer-image" id="cc-id-offer-image" src="[Offer section image goes here]" alt="Offer">
+    <div class="offer-content" id="cc-id-offer-content">[Offer section goes here]</div>
+  </section>
+</body>
+</html>
+

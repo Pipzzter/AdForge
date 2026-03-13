@@ -1,77 +1,53 @@
-# Med-Agents
+# AdForge
 
-AI-powered multi-agent system for medical advertorial generation. The platform uses specialized agents to automate the creation of compliant, high-converting advertorial content with AI-generated images.
+AI-powered content generation platform that transforms raw marketing copy into beautiful, ready-to-publish landing pages. Using advanced LLMs and image generation, AdForge automates the entire process of creating high-converting advertorial content.
 
 ## Features
 
-- **Copy Injection Agent**: Parses raw advertorial copy and injects it into HTML templates
-- **AI Image Generation**: Uses Gemini 2.5 Flash for photorealistic image generation (headline, body, product images)
-- **Template System**: HTML templates with placeholders for dynamic content injection
+- **Smart Copy Injection**: Parses raw marketing copy and intelligently injects it into HTML templates
+- **AI Image Generation**: Automatically generates contextual images using Gemini 2.5 Flash
+- **Clean Templates**: Minimal, conversion-focused HTML template with all standard sections
 - **Multi-Agent Architecture**: Extensible base agent class for adding new specialized agents
+
+## How It Works
+
+1. **Input**: Paste your raw advertorial copy (headline, hook, body content, testimonials, CTA)
+2. **Parse**: AI extracts and categorizes each content section
+3. **Generate**: Creates relevant images for each section
+4. **Output**: Complete HTML page ready to publish
 
 ## Project Structure
 
 ```
-med-agents/
+adforge/
 ├── backend/
 │   ├── app/
 │   │   ├── api/v1/routers/        # API endpoints
-│   │   │   ├── auth.py            # Authentication routes
-│   │   │   ├── copy_injection.py  # Copy injection agent routes
-│   │   │   ├── health.py          # Health check routes
-│   │   │   └── user.py            # User management routes
 │   │   ├── core/                  # Config, security, logging
 │   │   ├── db/                    # Database session, base
-│   │   ├── middleware/            # Request timing middleware
 │   │   ├── models/                # SQLAlchemy models
 │   │   ├── schemas/               # Pydantic schemas
 │   │   ├── services/
-│   │   │   ├── agents/            # AI Agent implementations
-│   │   │   │   ├── base.py        # Abstract base agent class
-│   │   │   │   ├── llm_client.py  # Gemini LLM client
-│   │   │   │   ├── image_client.py # Gemini image generation
-│   │   │   │   └── copy_injection/ # Agent 1: Copy Injection
-│   │   │   │       ├── agent.py           # Main orchestrator
-│   │   │   │       ├── copy_parser.py     # LLM-based copy parsing
-│   │   │   │       ├── image_generator.py # Image generation
-│   │   │   │       ├── placeholder_filler.py # Template filling
-│   │   │   │       ├── template_service.py   # Template loading
-│   │   │   │       └── schemas.py         # Data models
-│   │   │   ├── auth.py
-│   │   │   ├── health.py
-│   │   │   └── user.py
-│   │   ├── static/
-│   │   │   ├── generated/         # Generated advertorial output
-│   │   │   └── new_templates/     # HTML templates
-│   │   └── utils/
+│   │   │   └── agents/            # AI Agent implementations
+│   │   │       ├── base.py        # Abstract base agent class
+│   │   │       ├── llm_client.py  # Gemini LLM client
+│   │   │       ├── image_client.py # Gemini image generation
+│   │   │       └── copy_injection/ # Copy Injection Agent
+│   │   └── static/
+│   │       ├── generated/         # Generated output
+│   │       └── templates/         # HTML templates
 │   ├── alembic/                   # Database migrations
 │   └── tests/                     # pytest tests
 ├── frontend/
 │   └── src/
-│       ├── api/
-│       │   └── agents/            # Agent API clients
-│       │       └── copyInjection.ts
-│       ├── components/
-│       │   ├── features/          # Feature-specific components
-│       │   └── layout/            # Layout components
-│       ├── layouts/
-│       │   └── DefaultLayout.vue
-│       ├── pages/
-│       │   ├── HomePage.vue
-│       │   ├── CopyInjectionPage.vue
-│       │   ├── CompliancePage.vue
-│       │   ├── OptimizationPage.vue
-│       │   ├── ResearchPage.vue
-│       │   └── TranslationPage.vue
-│       ├── router/
-│       ├── stores/
-│       └── types/
-│           └── agent.ts           # Agent type definitions
+│       ├── api/                   # API clients
+│       ├── components/            # Vue components
+│       ├── layouts/               # Page layouts
+│       ├── pages/                 # Route pages
+│       ├── router/                # Vue Router config
+│       └── types/                 # TypeScript types
 ├── docs/                          # Documentation
-│   └── AGENT_1_COPY_INJECTION.md  # Agent 1 full documentation
-├── docker/                        # Docker configuration
-├── scripts/                       # Utility scripts
-└── .github/                       # GitHub workflows & Copilot instructions
+└── docker/                        # Docker configuration
 ```
 
 ## Tech Stack
@@ -83,10 +59,10 @@ med-agents/
 - Alembic migrations
 - Google Gemini API (LLM + Image Generation)
 - Pydantic v2
-- pytest + pytest-asyncio
+- pytest
 
 ### Frontend
-- Vue 3 (Composition API, `<script setup>`)
+- Vue 3 (Composition API)
 - TypeScript
 - Vite
 - Pinia
@@ -101,154 +77,66 @@ med-agents/
 ### Prerequisites
 - Python 3.12+
 - Node.js 18+
-- Docker & Docker Compose
-- Google Gemini API key
+- PostgreSQL
+- Google Cloud API key (for Gemini)
 
-### Create & activate virtual environment (backend)
-```powershell
+### Backend
+
+```bash
+cd backend
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements-dev.txt
+.venv\Scripts\activate  # Windows
+pip install -r requirements.txt
+cp .env.example .env    # Configure your environment variables
+alembic upgrade head
+uvicorn app.main:app --reload
 ```
 
-### Install frontend dependencies
-```powershell
+### Frontend
+
+```bash
 cd frontend
 npm install
-```
-
-### Environment configuration
-Copy `backend/.env.example` to `backend/.env` and configure:
-```env
-DATABASE_URL=postgresql+psycopg2://postgres:postgres@localhost:5432/backend_db
-GEMINI_API_KEY=your-gemini-api-key
-SECRET_KEY=your-secret-key
-```
-
-For Docker, use `DATABASE_URL=postgresql+psycopg2://postgres:postgres@db:5432/backend_db`.
-
-### Run Docker services
-First time:
-```powershell
-docker compose -f docker/docker-compose.yml up -d --build
-```
-Subsequent runs:
-```powershell
-docker compose -f docker/docker-compose.yml up -d
-```
-
-### Apply database migrations
-```powershell
-cd docker
-docker compose exec backend /bin/bash
-alembic upgrade head
-exit
-```
-
-### Run locally (development)
-```powershell
-# Backend
-uvicorn app.main:app --reload
-
-# Frontend (separate terminal)
-cd frontend
 npm run dev
 ```
 
-## Access the Application
+### Environment Variables
 
-- **Frontend**: http://localhost:5173
-- **Backend API**: http://localhost:8000
-- **API Docs**: http://localhost:8000/docs
-- **Health Check**: http://localhost:8000/api/v1/health/
+Create a `.env` file in the backend directory:
+
+```env
+DATABASE_URL=postgresql+asyncpg://user:password@localhost/adforge
+GEMINI_API_KEY=your_gemini_api_key
+SECRET_KEY=your_secret_key
+```
+
+## Template System
+
+AdForge uses a simple HTML template with placeholder markers:
+
+### Placeholders
+- Text: `[Headline goes here]`, `[Hook goes here]`, etc.
+- Images: `[Headline image goes here]`, `[Author image goes here]`, etc.
+
+### Repeatable Sections
+Sections that can repeat multiple times are wrapped with markers:
+
+```html
+<!-- REPEAT:body:START -->
+<section class="body-section">
+  <h2>[Body section title goes here]</h2>
+  <img src="[Body section image goes here]">
+  <p>[Body section goes here]</p>
+</section>
+<!-- REPEAT:body:END -->
+```
 
 ## API Endpoints
 
-### Health
-- `GET /api/v1/health/` – Service heartbeat
+### Copy Injection
+- `GET /api/v1/copyinjection/templates` - List available templates
+- `POST /api/v1/copyinjection/generate` - Generate landing page from copy
 
-### Authentication
-- `POST /api/v1/auth/register` – Register user & receive JWT
-- `POST /api/v1/auth/token` – Obtain JWT via credentials
+## License
 
-### Users
-- `POST /api/v1/user/` – Create user
-- `GET /api/v1/user/` – List users
-
-### Agents
-- `POST /api/v1/copy-injection/process` – Process copy injection
-- `GET /api/v1/copy-injection/templates` – List available templates
-
-## Agents
-
-### Agent 1: Copy & Image Injection
-
-> 📖 **Full Documentation:** [docs/AGENT_1_COPY_INJECTION.md](docs/AGENT_1_COPY_INJECTION.md)
->
-> 🧪 **Testing Ground:** [CheckoutChamp Funnel Builder](https://app.checkoutchamp.com/editfunnel/b263cdf6-2082-4fec-9565-77578efc1772)
-
-Automatically generates complete landing pages from HTML templates and raw advertorial copy.
-
-**Pipeline:**
-1. Load HTML template with placeholders
-2. Parse raw copy using Gemini 2.5 Flash LLM (structured output)
-3. Fill repeatable sections (body, reviews, social proof)
-4. Fill simple placeholders (headline, hook, product, offer)
-5. Generate AI images using Gemini 2.5 Flash Image
-6. Return complete HTML ready to publish
-
-**Key Features:**
-- Template-aware content placement
-- Dynamic section cloning (adapts to content length)
-- AI-powered copy parsing (extracts structure from raw text)
-- Context-aware image generation (embedded as base64)
-- Automatic cleanup of empty optional sections
-
-### Image Generation Guidelines
-
-Three types of images are generated following strict advertorial guidelines:
-
-| Type | Goal | Style |
-|------|------|-------|
-| **Headline** | Create extreme curiosity | Editorial, candid, NO product |
-| **Body** | Explain concepts simply | Educational, clear focus |
-| **Product** | Demonstrate mechanism | Trustworthy, clinical-but-human |
-
-## Running Tests
-
-```powershell
-# All tests
-pytest
-
-# Specific directory
-pytest tests/services
-
-# With coverage
-pytest --cov=app tests/
-```
-
-## Git Hooks
-
-Pre-commit hooks are configured for code quality:
-```powershell
-# Install hooks
-pre-commit install
-
-# Run on all files
-pre-commit run --all-files
-```
-
-Hooks include: Black, isort, Ruff, and selective pytest for changed files.
-
-## Environment Modes
-
-```powershell
-# Development (default)
-docker compose -f docker/docker-compose.yml up -d
-
-# Staging
-APP_ENV=staging docker compose -f docker/docker-compose.yml up -d --build
-
-# Production
-APP_ENV=production docker compose -f docker/docker-compose.yml up -d --build
-```
+MIT

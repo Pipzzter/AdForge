@@ -1,0 +1,98 @@
+{
+  "version": "1.0",
+  "description": "Template metadata for AdForge. Single clean template with all standard placeholders.",
+
+  "templates": {
+    "template_simple": {
+      "name": "Clean Article",
+      "file": "template_simple.html",
+
+      "repeatable_sections": {
+        "body": {
+          "marker": "REPEAT:body",
+          "description": "Body content block with title, image, and text",
+          "components": [
+            {"placeholder": "[Body section title goes here]", "type": "text"},
+            {"placeholder": "[Body section image goes here]", "type": "image"},
+            {"placeholder": "[Body section goes here]", "type": "text"}
+          ],
+          "notes": "Title + Image + Content group"
+        },
+        "social_proof": {
+          "marker": "REPEAT:social_proof",
+          "description": "Social proof with person image, name, and quote",
+          "components": [
+            {"placeholder": "[Social proof person/group image goes here]", "type": "image"},
+            {"placeholder": "[Social proof person/group goes here]", "type": "text"},
+            {"placeholder": "[Social proof goes here]", "type": "text"}
+          ],
+          "notes": "Image + Person/Group name + Quote"
+        },
+        "review": {
+          "marker": "REPEAT:review",
+          "description": "Customer review with image, name, and testimonial",
+          "components": [
+            {"placeholder": "[Review person image goes here]", "type": "image"},
+            {"placeholder": "[Review person name goes here]", "type": "text"},
+            {"placeholder": "[Review goes here]", "type": "text"}
+          ],
+          "notes": "Image + Name + Review text"
+        }
+      },
+
+      "non_repeatable_placeholders": [
+        {"name": "headline", "placeholder": "[Headline goes here]", "type": "text"},
+        {"name": "hook", "placeholder": "[Hook goes here]", "type": "text"},
+        {"name": "headline_image", "placeholder": "[Headline image goes here]", "type": "image"},
+        {"name": "author_image", "placeholder": "[Author image goes here]", "type": "image"},
+        {"name": "author_info", "placeholder": "[Author info goes here]", "type": "text"},
+        {"name": "date", "placeholder": "[Date of last edit goes here]", "type": "text"},
+        {"name": "introduction", "placeholder": "[Introduction goes here]", "type": "text"},
+        {"name": "product_title", "placeholder": "[Product presentation title goes here]", "type": "text"},
+        {"name": "product_image", "placeholder": "[Product presentation image goes here]", "type": "image"},
+        {"name": "product_content", "placeholder": "[Product presentation goes here]", "type": "text"},
+        {"name": "main_social_proof_image", "placeholder": "[Main social proof image goes here]", "type": "image"},
+        {"name": "main_social_proof", "placeholder": "[Main Social proof goes here]", "type": "text"},
+        {"name": "offer_title", "placeholder": "[Offer section title goes here]", "type": "text"},
+        {"name": "offer_image", "placeholder": "[Offer section image goes here]", "type": "image"},
+        {"name": "offer_content", "placeholder": "[Offer section goes here]", "type": "text"}
+      ]
+    }
+  },
+
+  "image_context_rules": {
+    "headline_image": {
+      "context_source": "headline + introduction",
+      "description": "Hero image representing the entire page topic/theme"
+    },
+    "author_image": {
+      "context_source": "author_info",
+      "description": "Professional headshot matching author name/credentials"
+    },
+    "body_section_image": {
+      "context_source": "body section content (same REPEAT block)",
+      "description": "Image relevant to THAT specific body section's content"
+    },
+    "product_image": {
+      "context_source": "product_content",
+      "description": "Clear product shot or product-in-use image"
+    },
+    "social_proof_image": {
+      "context_source": "social_proof content (same REPEAT block)",
+      "description": "Photo of expert/doctor/authority providing the social proof"
+    },
+    "main_social_proof_image": {
+      "context_source": "main_social_proof content",
+      "description": "Charts, study graphics, credentials supporting main social proof"
+    },
+    "review_person_image": {
+      "context_source": "review content (same REPEAT block)",
+      "description": "Realistic human photo matching reviewer name/demographic"
+    },
+    "offer_image": {
+      "context_source": "offer_content",
+      "description": "Product packaging, bundle, or promotional image"
+    }
+  }
+}
+

@@ -7,8 +7,7 @@ API endpoints for Agent 1 - Copy & Image Injection.
 
 import logging
 
-from fastapi import APIRouter, HTTPException
-from fastapi.responses import PlainTextResponse
+from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
 from app.services.agents.copy_injection import (
@@ -35,15 +34,6 @@ async def get_templates() -> list[TemplateSummary]:
     return TemplateService.get_all()
 
 
-@router.get("/templates/{template_id}/css", response_class=PlainTextResponse)
-async def get_template_css(template_id: str) -> PlainTextResponse:
-    """Return the raw CSS for a template."""
-    logger.info("GET /copyinjection/templates/%s/css", template_id)
-    try:
-        css = TemplateService.get_css(template_id)
-    except FileNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    return PlainTextResponse(content=css, media_type="text/css")
 
 
 # ---------------------------------------------------------------------------

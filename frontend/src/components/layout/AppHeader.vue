@@ -16,7 +16,7 @@ function selectAgent(route: string) {
   <header class="bg-slate-900 border-b border-slate-700">
     <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
       <router-link to="/" class="text-xl font-bold text-white hover:text-slate-300">
-        Med Agents
+        AdForge
       </router-link>
 
       <div class="relative">

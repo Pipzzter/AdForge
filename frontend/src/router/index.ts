@@ -13,26 +13,6 @@ const router = createRouter({
       name: 'copyinjection',
       component: () => import('@/pages/CopyInjectionPage.vue'),
     },
-    {
-      path: '/translation',
-      name: 'translation',
-      component: () => import('@/pages/TranslationPage.vue'),
-    },
-    {
-      path: '/compliance',
-      name: 'compliance',
-      component: () => import('@/pages/CompliancePage.vue'),
-    },
-    {
-      path: '/optimization',
-      name: 'optimization',
-      component: () => import('@/pages/OptimizationPage.vue'),
-    },
-    {
-      path: '/research',
-      name: 'research',
-      component: () => import('@/pages/ResearchPage.vue'),
-    },
   ],
 })
 

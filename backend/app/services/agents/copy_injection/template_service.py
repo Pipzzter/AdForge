@@ -16,7 +16,7 @@ from app.services.agents.copy_injection.schemas import TemplateSummary, Template
 logger = logging.getLogger(__name__)
 
 # Path to templates directory
-TEMPLATES_DIR = Path(__file__).parent.parent.parent.parent / "static" / "new_templates"
+TEMPLATES_DIR = Path(__file__).parent.parent.parent.parent / "static" / "templates"
 METADATA_FILE = TEMPLATES_DIR / "template_metadata.json"
 
 
@@ -66,17 +66,6 @@ class TemplateService:
             raise FileNotFoundError(f"Template HTML not found: {html_path}")
         return html_path.read_text(encoding="utf-8")
 
-    @classmethod
-    def get_css(cls, template_id: str) -> str:
-        """Load the CSS content for a template (if exists)."""
-        # CSS file has same name as HTML but with .css extension
-        metadata = cls.get_metadata(template_id)
-        css_filename = metadata.file.replace(".html", ".css")
-        css_path = TEMPLATES_DIR / css_filename
-        if not css_path.exists():
-            logger.warning("No CSS file found for template %s", template_id)
-            return ""
-        return css_path.read_text(encoding="utf-8")
 
     @classmethod
     def get_image_context_rules(cls) -> dict:
@@ -119,6 +108,6 @@ class TemplateService:
         pattern = rf'<!--\s*REPEAT:{section_name}:START\s*-->(.*?)<!--\s*REPEAT:{section_name}:END\s*-->'
         match = re.search(pattern, html, re.DOTALL | re.IGNORECASE)
         if match:
-            return (match.group(0), match.group(1), match.start(), match.end())
+            return match.group(0), match.group(1), match.start(), match.end()
         return None
 

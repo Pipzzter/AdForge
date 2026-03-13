@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { onMounted, ref } from 'vue'
 import JSZip from 'jszip'
 import { copyInjectionApi, type CopyInjectionOutput, type TemplateSummary } from '@/api'
 import { agents } from '@/types/agent'
@@ -10,9 +10,6 @@ const agent = agents.find((a) => a.id === 'copyinjection')!
 const templates = ref<TemplateSummary[]>([])
 const selectedTemplateId = ref('')
 const templatesLoading = ref(false)
-
-// CSS cached for the selected template
-const templateCss = ref('')
 
 // Form inputs
 const rawCopy = ref('')
@@ -37,19 +34,6 @@ onMounted(async () => {
     templatesLoading.value = false
   }
 })
-
-// Fetch CSS whenever the selected template changes
-watch(selectedTemplateId, async (id) => {
-  if (!id) return
-  try {
-    console.log('Fetching CSS for template:', id)
-    templateCss.value = await copyInjectionApi.getTemplateCss(id)
-    console.log('CSS loaded, length:', templateCss.value.length)
-  } catch (e) {
-    console.error('Failed to fetch CSS:', e)
-    templateCss.value = ''
-  }
-}, { immediate: true })
 
 async function handleSubmit() {
   if (!selectedTemplateId.value || !rawCopy.value.trim()) {
@@ -77,24 +61,12 @@ async function handleSubmit() {
   }
 }
 
-function injectCssIntoHtml(html: string, css: string, asLink = false): string {
-  if (!css) return html
-  const tag = asLink
-    ? '<link rel="stylesheet" href="style.css">'
-    : `<style>\n${css}\n</style>`
-  return html.includes('</head>')
-    ? html.replace('</head>', `${tag}\n</head>`)
-    : `${tag}\n${html}`
-}
-
 /**
  * Replace relative /static/generated/ paths with absolute URLs so images
- * load correctly when the HTML is opened as a Blob URL or downloaded as a ZIP.
+ * load correctly when the HTML is opened as a Blob URL or downloaded.
  */
-function resolveImageUrls(html: string, absolute: boolean): string {
-  const base = absolute
-    ? (import.meta.env.VITE_API_URL?.replace('/api/v1', '') || window.location.origin)
-    : ''
+function resolveImageUrls(html: string): string {
+  const base = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || window.location.origin
   return html.replace(
     /src="(\/static\/generated\/[^"]+)"/g,
     (_, path) => `src="${base}${path}"`,
@@ -103,8 +75,7 @@ function resolveImageUrls(html: string, absolute: boolean): string {
 
 function openPreview() {
   if (!result.value?.html) return
-  let html = resolveImageUrls(result.value.html, true)
-  html = injectCssIntoHtml(html, templateCss.value)
+  const html = resolveImageUrls(result.value.html)
   const blob = new Blob([html], { type: 'text/html' })
   const url = URL.createObjectURL(blob)
   window.open(url, '_blank')
@@ -113,14 +84,9 @@ function openPreview() {
 
 async function downloadZip() {
   if (!result.value?.html) return
-  console.log('Download ZIP - CSS length:', templateCss.value.length)
-  // For ZIP: keep relative URLs since images are served separately
-  let html = resolveImageUrls(result.value.html, true)
-  html = injectCssIntoHtml(html, templateCss.value, true)
+  const html = resolveImageUrls(result.value.html)
   const zip = new JSZip()
   zip.file('index.html', html)
-  zip.file('style.css', templateCss.value)
-  console.log('ZIP created with style.css length:', templateCss.value.length)
   const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')

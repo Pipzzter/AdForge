@@ -6,9 +6,9 @@ import { agents } from '@/types/agent'
 <template>
   <div>
     <div class="text-center mb-12">
-      <h1 class="text-4xl font-bold text-white mb-4">AI Marketing Agents</h1>
+      <h1 class="text-4xl font-bold text-white mb-4">AdForge</h1>
       <p class="text-slate-400 text-lg max-w-2xl mx-auto">
-        Automate your marketing workflow with 5 specialized AI agents for creating, translating, optimizing, and compliance-checking landing pages.
+        Transform your marketing copy into beautiful, ready-to-publish landing pages with AI-powered content and image generation.
       </p>
     </div>
 
